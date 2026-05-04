@@ -1,61 +1,11 @@
 'use client'
 
-import { SessionDetail } from './shared'
+import { SessionDetail, FileIcon, iconBg } from './shared'
 
 type Props = {
   selectedId: string | null
   detail: SessionDetail | null
   loading: boolean
-}
-
-function FileIcon({ mimeType }: { mimeType: string }) {
-  if (mimeType.startsWith('image/')) {
-    return (
-      <svg className="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2zm10-10a1 1 0 11-2 0 1 1 0 012 0z" />
-      </svg>
-    )
-  }
-  if (mimeType === 'application/pdf') {
-    return (
-      <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6M9 17h4" />
-      </svg>
-    )
-  }
-  if (mimeType.startsWith('video/')) {
-    return (
-      <svg className="w-7 h-7 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-      </svg>
-    )
-  }
-  if (mimeType.startsWith('audio/')) {
-    return (
-      <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
-      </svg>
-    )
-  }
-  return (
-    <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-    </svg>
-  )
-}
-
-function iconBg(mimeType: string) {
-  if (mimeType.startsWith('image/')) return 'bg-blue-50'
-  if (mimeType === 'application/pdf') return 'bg-red-50'
-  if (mimeType.startsWith('video/')) return 'bg-purple-50'
-  if (mimeType.startsWith('audio/')) return 'bg-green-50'
-  return 'bg-gray-100'
 }
 
 export default function FilePanel({ selectedId, detail, loading }: Props) {
@@ -92,7 +42,12 @@ export default function FilePanel({ selectedId, detail, loading }: Props) {
                 href={doc.s3Url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col items-center gap-2.5 p-3 rounded-xl border border-transparent hover:border-gray-200 hover:shadow-sm transition-all group"
+                draggable={true}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify(doc))
+                  e.dataTransfer.effectAllowed = 'copy'
+                }}
+                className="flex flex-col items-center gap-2.5 p-3 rounded-xl border border-transparent hover:border-gray-200 hover:shadow-sm transition-all group cursor-grab active:cursor-grabbing"
               >
                 <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${iconBg(doc.mimeType)}`}>
                   <FileIcon mimeType={doc.mimeType} />
