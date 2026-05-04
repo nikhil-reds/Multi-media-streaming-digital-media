@@ -34,8 +34,8 @@ export default function MainScreen() {
 
   return (
     <div
-      className="bg-gray-50 flex gap-5 px-6 py-6"
-      style={{ minHeight: 'calc(100vh - 113px)' }}
+      className="bg-gray-50 flex gap-5 px-6 py-6 overflow-hidden"
+      style={{ height: 'calc(100vh - 113px)' }}
     >
       <SessionSidebar
         sessions={sessions}
