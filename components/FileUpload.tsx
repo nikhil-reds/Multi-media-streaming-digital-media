@@ -91,11 +91,12 @@ export default function FileUpload() {
         <p className="text-sm font-medium text-gray-700">
           Drag &amp; drop files here, or <span className="underline">browse</span>
         </p>
-        <p className="text-xs text-gray-400">PDF, DOC, DOCX, TXT, PPT and more</p>
+        <p className="text-xs text-gray-400">PDF, Images (JPG, PNG, GIF…), Videos (MP4, MOV…)</p>
         <input
           ref={inputRef}
           type="file"
           multiple
+          accept="application/pdf,image/*,video/*"
           className="hidden"
           onChange={(e) => addFiles(e.target.files)}
         />
