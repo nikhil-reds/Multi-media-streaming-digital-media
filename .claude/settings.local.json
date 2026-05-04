@@ -9,7 +9,30 @@
       "Bash(grep -E \"^pg$|^dotenv$|^multer$|^formidable$\")",
       "Bash(grep -E \"^pg$|^pg-\")",
       "Bash(npm install *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(ls middleware*)",
+      "Bash(ls app/not-found*)",
+      "Bash(ls app/error*)",
+      "Bash(node -e \"const f = require\\('./node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js'\\); console.log\\('ok'\\)\")",
+      "Bash(node -e \"const fonts = require\\('./node_modules/next/dist/compiled/next-font/google/index.js'\\); console.log\\(Object.keys\\(fonts\\).filter\\(k => k.startsWith\\('G'\\)\\)\\)\")",
+      "Bash(node -e \"const f = require\\('./node_modules/next/font/google/index.js'\\); console.log\\(Object.keys\\(f\\).filter\\(k => k.startsWith\\('G'\\)\\)\\)\")",
+      "Bash(node -e \"const f = require\\('./node_modules/next/font/google/index.js'\\); console.log\\(Object.keys\\(f\\).slice\\(0,10\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('c:/Users/Tripti shakya/Desktop/multi-media/node_modules/next/package.json'\\).version\\)\")",
+      "Bash(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\api\\\\sessions\\\\[id]\" -Force)",
+      "Bash(Out-Null)",
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "Bash(node -e \"const p = require\\('./node_modules/next/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(Remove-Item -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\view\\\\[docId]\\\\layout.tsx\" -Force)",
+      "Bash(Remove-Item -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\view\\\\[docId]\\\\page.tsx\" -Force)",
+      "Bash(Write-Host \"cleaned up bad files\")",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\view\" -Recurse -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\page.tsx\" -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\main-screen\\\\page.tsx\" -Force -Confirm:$false)",
+      "PowerShell(Remove-Item -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\main-screen\" -Force -Confirm:$false)",
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\" -Recurse | Where-Object { !$_.PSIsContainer } | ForEach-Object { $_.FullName.Replace\\(\"c:\\\\Users\\\\Tripti shakya\\\\Desktop\\\\multi-media\\\\app\\\\\", \"\"\\) })"
     ]
   }
 }
