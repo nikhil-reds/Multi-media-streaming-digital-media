@@ -5,23 +5,38 @@ import type { Document } from './shared'
 import { FileIcon, iconBg } from './shared'
 
 export default function ScreenPanel() {
-  const [count, setCount] = useState(5)
+  const [screens, setScreens] = useState<number[]>([1, 2, 3, 4, 5])
+  const [nextId, setNextId] = useState(6)
   const [assignments, setAssignments] = useState<Record<number, Document>>({})
   const [dragOver, setDragOver] = useState<number | null>(null)
 
-  function handleDrop(e: React.DragEvent, screenNum: number) {
+  function addScreen() {
+    setScreens((prev) => [...prev, nextId])
+    setNextId((prev) => prev + 1)
+  }
+
+  function removeScreen(id: number) {
+    setScreens((prev) => prev.filter((s) => s !== id))
+    setAssignments((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }
+
+  function handleDrop(e: React.DragEvent, id: number) {
     e.preventDefault()
     setDragOver(null)
     try {
       const doc: Document = JSON.parse(e.dataTransfer.getData('application/json'))
-      setAssignments((prev) => ({ ...prev, [screenNum]: doc }))
+      setAssignments((prev) => ({ ...prev, [id]: doc }))
     } catch {}
   }
 
-  function removeAssignment(screenNum: number) {
+  function removeAssignment(id: number) {
     setAssignments((prev) => {
       const next = { ...prev }
-      delete next[screenNum]
+      delete next[id]
       return next
     })
   }
@@ -34,7 +49,7 @@ export default function ScreenPanel() {
           Screen
         </h2>
         <button
-          onClick={() => setCount((c) => c + 1)}
+          onClick={addScreen}
           className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 hover:text-black px-3 py-1.5 rounded-lg cursor-pointer transition-colors"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,12 +61,23 @@ export default function ScreenPanel() {
 
       {/* Screens grid */}
       <div className="flex-1 flex flex-wrap items-start gap-4 px-5 py-5 overflow-y-auto">
-        {Array.from({ length: count }, (_, i) => i + 1).map((n) => {
-          const assigned = assignments[n]
-          const isOver = dragOver === n
+        {screens.map((id, idx) => {
+          const assigned = assignments[id]
+          const isOver = dragOver === id
 
           return (
-            <div key={n} className="shrink-0 flex flex-col gap-2">
+            <div key={id} className="shrink-0 flex flex-col gap-2 relative group/screen">
+              {/* Close button — always visible on hover of the whole card */}
+              <button
+                onClick={() => removeScreen(id)}
+                className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-white border border-gray-200 shadow-sm text-gray-400 hover:bg-red-50 hover:border-red-300 hover:text-red-500 flex items-center justify-center transition-colors opacity-0 group-hover/screen:opacity-100"
+              >
+                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Drop zone tile */}
               <div
                 className={`w-40 aspect-square rounded-xl border-2 relative overflow-hidden transition-all duration-150
                   ${isOver
@@ -60,9 +86,9 @@ export default function ScreenPanel() {
                     ? 'border-gray-200 bg-white shadow-sm'
                     : 'border-dashed border-gray-200 bg-white'
                   }`}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(n) }}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(id) }}
                 onDragLeave={() => setDragOver(null)}
-                onDrop={(e) => handleDrop(e, n)}
+                onDrop={(e) => handleDrop(e, id)}
               >
                 {assigned ? (
                   <>
@@ -74,8 +100,9 @@ export default function ScreenPanel() {
                         {assigned.name}
                       </span>
                     </div>
+                    {/* Unassign doc button */}
                     <button
-                      onClick={() => removeAssignment(n)}
+                      onClick={() => removeAssignment(id)}
                       className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm"
                     >
                       <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,8 +131,9 @@ export default function ScreenPanel() {
                   </div>
                 )}
               </div>
+
               <p className="text-xs font-medium text-gray-500 text-center">
-                Screen {String(n).padStart(2, '0')}
+                Screen {String(idx + 1).padStart(2, '0')}
               </p>
             </div>
           )
