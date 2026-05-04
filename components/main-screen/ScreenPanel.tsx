@@ -123,8 +123,16 @@ export default function ScreenPanel() {
           </p>
           {!compact && (
             <button
-              onClick={() => setFocusedScreen(id)}
-              className="text-black hover:text-blue-500 transition-colors"
+              onClick={() => {
+                const doc = assignments[id]
+                if (doc) {
+                  window.open(`/view/${doc.id}`, '_blank')
+                } else {
+                  setFocusedScreen(id)
+                }
+              }}
+              className={`transition-colors ${assignments[id] ? 'text-black hover:text-blue-500' : 'text-gray-300 hover:text-gray-500'}`}
+              title={assignments[id] ? `Open ${assignments[id].name}` : 'No document assigned'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
