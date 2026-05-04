@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import SessionSidebar from '@/components/main-screen/SessionSidebar'
 import FilePanel from '@/components/main-screen/FilePanel'
+import ScreenPanel from '@/components/main-screen/ScreenPanel'
 import type { Session, SessionDetail } from '@/components/main-screen/shared'
 
 export default function MainScreen() {
@@ -48,6 +49,8 @@ export default function MainScreen() {
         detail={detail}
         loading={loadingDetail}
       />
+
+      <ScreenPanel />
     </div>
   )
 }
