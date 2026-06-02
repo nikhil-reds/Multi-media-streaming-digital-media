@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileIcon, iconBg, formatBytes } from '@/components/main-screen/shared'
 import Toast, { type ToastData } from '@/components/Toast'
+import UniversalMediaViewer from '@/components/UniversalMediaViewer'
 
 type Document = {
   id: string
@@ -246,33 +247,7 @@ export default function PlaylistBuilder() {
             {previewIdx !== null && playlistItems[previewIdx] ? (
               <div className="w-full h-full flex flex-col justify-between">
                 <div className="flex-1 relative w-full bg-black rounded-xl overflow-hidden flex items-center justify-center">
-                  {playlistItems[previewIdx].mimeType.startsWith('video/') ? (
-                    <video
-                      key={playlistItems[previewIdx].id}
-                      src={playlistItems[previewIdx].s3Url}
-                      controls
-                      autoPlay={isPlaying}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : playlistItems[previewIdx].mimeType.startsWith('image/') ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={playlistItems[previewIdx].s3Url}
-                      alt={playlistItems[previewIdx].name}
-                      className="max-w-full max-h-full object-contain select-none"
-                    />
-                  ) : playlistItems[previewIdx].mimeType === 'application/pdf' ? (
-                    <iframe
-                      src={playlistItems[previewIdx].s3Url}
-                      title={playlistItems[previewIdx].name}
-                      className="w-full h-full border-0 rounded-xl"
-                    />
-                  ) : (
-                    <div className="text-center p-6 text-gray-400">
-                      <p className="text-sm font-medium truncate mb-2">{playlistItems[previewIdx].name}</p>
-                      <span className="text-xs text-gray-500">Preview not supported for this file type</span>
-                    </div>
-                  )}
+                  <UniversalMediaViewer doc={playlistItems[previewIdx]} siblingDocs={playlistItems} />
                 </div>
 
                 {/* Player Controls */}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import CloseButton from '../../[docId]/CloseButton'
+import UniversalMediaViewer from '@/components/UniversalMediaViewer'
 
 type PlaylistItem = {
   id: string
@@ -97,38 +98,8 @@ export default function PlaylistPlayer({ playlist }: { playlist: Playlist }) {
         </button>
 
         {/* Media Frame */}
-        <div className="w-full h-full flex items-center justify-center p-6">
-          {activeItem.mimeType.startsWith('video/') ? (
-            <video
-              key={activeItem.id}
-              src={activeItem.s3Url}
-              controls
-              autoPlay
-              className="max-w-full max-h-full object-contain"
-            />
-          ) : activeItem.mimeType.startsWith('image/') ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={activeItem.s3Url}
-              alt={activeItem.name}
-              className="max-w-full max-h-full object-contain select-none"
-            />
-          ) : activeItem.mimeType === 'application/pdf' ? (
-            <iframe
-              src={activeItem.s3Url}
-              title={activeItem.name}
-              className="w-full h-full border-0 rounded-xl"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-4">
-              <svg className="w-16 h-16 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
-                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <p className="text-gray-400 text-sm">{activeItem.name}</p>
-              <span className="text-xs text-gray-500">Preview not supported for this file type.</span>
-            </div>
-          )}
+        <div className="w-full h-full p-6 flex items-center justify-center overflow-hidden">
+          <UniversalMediaViewer doc={activeItem} siblingDocs={playlist.items} />
         </div>
 
         {/* Right Arrow */}
