@@ -54,8 +54,14 @@ export default function FilePanel({ selectedId, detail, loading }: Props) {
                     {idx + 1}
                   </div>
                 )}
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${iconBg(doc.mimeType)}`}>
-                  <FileIcon mimeType={doc.mimeType} />
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${iconBg(doc.mimeType)} overflow-hidden`}>
+                  {doc.mimeType.startsWith('image/') ? (
+                    <img src={doc.s3Url} alt={doc.name} className="w-full h-full object-cover" />
+                  ) : doc.mimeType.startsWith('video/') ? (
+                    <video src={doc.s3Url} className="w-full h-full object-cover" preload="metadata" muted />
+                  ) : (
+                    <FileIcon mimeType={doc.mimeType} />
+                  )}
                 </div>
                 <span className="text-xs text-gray-600 text-center leading-snug line-clamp-2 break-all group-hover:text-black w-full">
                   {doc.name}

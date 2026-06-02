@@ -751,8 +751,14 @@ export default function DocumentsDashboard() {
                         </TableCell>
                         <TableCell className="p-4 font-semibold text-zinc-800 text-xs">
                           <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg(doc.mimeType)} shrink-0 shadow-sm`}>
-                              <FileIcon mimeType={doc.mimeType} className="w-5 h-5" />
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg(doc.mimeType)} shrink-0 shadow-sm overflow-hidden`}>
+                              {doc.mimeType.startsWith('image/') ? (
+                                <img src={doc.s3Url} alt={doc.name} className="w-full h-full object-cover" />
+                              ) : doc.mimeType.startsWith('video/') ? (
+                                <video src={doc.s3Url} className="w-full h-full object-cover" preload="metadata" muted />
+                              ) : (
+                                <FileIcon mimeType={doc.mimeType} className="w-5 h-5" />
+                              )}
                             </div>
                             <span className="truncate max-w-[200px]" title={doc.name}>
                               {doc.name}
