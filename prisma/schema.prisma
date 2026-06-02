@@ -55,6 +55,32 @@ model Document {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
-  session   Session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session       Session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  playlistItems PlaylistItem[]
 }
+
+model Playlist {
+  id        String         @id @default(cuid())
+  name      String
+  s3Bucket  String
+  s3Key     String
+  s3Url     String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  items     PlaylistItem[]
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  documentId String
+  order      Int
+
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, order])
+}
+
 
