@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileIcon, iconBg, formatBytes } from '@/components/main-screen/shared'
-import Toast, { type ToastData } from '@/components/Toast'
 import UniversalMediaViewer from '@/components/UniversalMediaViewer'
+import { toast } from 'sonner'
 
 type Document = {
   id: string
@@ -30,8 +30,6 @@ export default function PlaylistBuilder() {
   const [loopUnlimited, setLoopUnlimited] = useState<boolean>(true)
   const [playlistItems, setPlaylistItems] = useState<Document[]>([])
   const [dragOverBuilder, setDragOverBuilder] = useState(false)
-  const [toast, setToast] = useState<ToastData | null>(null)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Preview Player State
   const [previewIdx, setPreviewIdx] = useState<number | null>(null)
@@ -78,11 +76,7 @@ export default function PlaylistBuilder() {
     }
   }, [isPlaying, playlistItems.length, previewIdx, rotationInterval])
 
-  const showToast = (message: string, type: ToastData['type']) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    setToast({ message, type })
-    toastTimerRef.current = setTimeout(() => setToast(null), 4000)
-  }
+
 
   // Handle Drag & Drop to Builder
   const handleDrop = (e: React.DragEvent) => {
@@ -93,7 +87,7 @@ export default function PlaylistBuilder() {
       if (!rawData) return
       const doc: Document = JSON.parse(rawData)
       if (playlistItems.some((item) => item.id === doc.id)) {
-        showToast('Document already in playlist', 'error')
+        toast.error('Document already in playlist')
         return
       }
       setPlaylistItems((prev) => [...prev, doc])
@@ -134,11 +128,11 @@ export default function PlaylistBuilder() {
   // Save playlist API call
   const handleSave = async () => {
     if (!playlistName.trim()) {
-      showToast('Please enter a playlist name', 'error')
+      toast.error('Please enter a playlist name')
       return
     }
     if (playlistItems.length === 0) {
-      showToast('Please add at least one document to the playlist', 'error')
+      toast.error('Please add at least one document to the playlist')
       return
     }
 
@@ -155,14 +149,14 @@ export default function PlaylistBuilder() {
       })
 
       if (res.ok) {
-        showToast('Playlist saved successfully!', 'success')
-        setTimeout(() => router.push('/main-screen'), 1200)
+        toast.success('Playlist saved successfully!')
+        router.push('/main-screen')
       } else {
         const errorData = await res.json()
-        showToast(errorData.error || 'Failed to save playlist', 'error')
+        toast.error(errorData.error || 'Failed to save playlist')
       }
     } catch (error) {
-      showToast('An error occurred. Please try again.', 'error')
+      toast.error('An error occurred. Please try again.')
     }
   }
 
@@ -171,7 +165,7 @@ export default function PlaylistBuilder() {
       className="bg-gray-50 flex gap-6 px-6 py-6 overflow-hidden"
       style={{ height: 'calc(100vh - 113px)' }}
     >
-      <Toast toast={toast} />
+
 
       {/* Sidebar: Sessions & Documents */}
       <aside className="w-80 shrink-0 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col overflow-hidden">
