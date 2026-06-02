@@ -17,6 +17,11 @@ export default function Navbar() {
             Main Screen
           </Link>
         </li>
+        <li>
+          <Link href="/playlist-builder" className="hover:text-gray-300 transition-colors bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-lg transition-all">
+            Playlist Builder
+          </Link>
+        </li>
       </ul>
     </nav>
   );
