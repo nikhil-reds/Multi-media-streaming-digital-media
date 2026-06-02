@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Session, StatusBadge, formatDate, FileIcon, iconBg } from './shared'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type Props = {
   sessions: Session[]
@@ -37,7 +38,23 @@ export default function SessionSidebar({
       {/* List */}
       <div className="flex-1 overflow-y-auto py-2">
         {loading ? (
-          <p className="px-5 py-4 text-sm text-gray-400">Loading…</p>
+          <div className="px-5 py-2 space-y-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="flex gap-3.5 items-center py-2 border-b border-gray-50/50 last:border-0">
+                {activeTab === 'playlists' && (
+                  <Skeleton className="w-10 h-10 rounded-lg shrink-0" />
+                )}
+                <div className="flex-1 space-y-2">
+                  <div className="flex justify-between items-center gap-2">
+                    <Skeleton className="h-3 w-2/3 rounded-md" />
+                    {activeTab === 'sessions' && <Skeleton className="h-4 w-12 rounded-full" />}
+                  </div>
+                  <Skeleton className="h-2 w-1/3 rounded-md" />
+                  <Skeleton className="h-2 w-1/4 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <div className="px-5 py-8 text-center">
             <p className="text-sm text-gray-400">No {activeTab} found.</p>
