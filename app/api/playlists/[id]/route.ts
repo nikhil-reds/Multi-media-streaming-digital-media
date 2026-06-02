@@ -53,3 +53,19 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to fetch playlist' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    await prisma.playlist.delete({
+      where: { id },
+    })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('[playlists DELETE]', error)
+    return NextResponse.json({ error: 'Failed to delete playlist' }, { status: 500 })
+  }
+}
