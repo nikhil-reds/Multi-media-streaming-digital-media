@@ -27,28 +27,11 @@ export default function SessionSidebar({
 
   return (
     <aside className="w-72 shrink-0 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-      {/* Tab Header */}
-      <div className="flex border-b border-gray-150 shrink-0">
-        <button
-          onClick={() => onTabChange('sessions')}
-          className={`flex-1 text-center py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer border-b-2 transition-all ${
-            activeTab === 'sessions'
-              ? 'border-black text-black'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          Sessions
-        </button>
-        <button
-          onClick={() => onTabChange('playlists')}
-          className={`flex-1 text-center py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer border-b-2 transition-all ${
-            activeTab === 'playlists'
-              ? 'border-black text-black'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
-          }`}
-        >
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-100 shrink-0">
+        <h2 className="text-xs font-semibold text-gray-400 tracking-widest uppercase">
           Playlists
-        </button>
+        </h2>
       </div>
 
       {/* List */}
