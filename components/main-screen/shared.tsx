@@ -6,6 +6,14 @@ export type Session = {
 }
 
 export function FileIcon({ mimeType, className = 'w-7 h-7' }: { mimeType: string; className?: string }) {
+  if (mimeType === 'application/playlist') {
+    return (
+      <svg className={`${className} text-orange-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+          d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+      </svg>
+    )
+  }
   if (mimeType.startsWith('image/')) {
     return (
       <svg className={`${className} text-blue-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,6 +56,7 @@ export function FileIcon({ mimeType, className = 'w-7 h-7' }: { mimeType: string
 }
 
 export function iconBg(mimeType: string) {
+  if (mimeType === 'application/playlist') return 'bg-orange-50'
   if (mimeType.startsWith('image/')) return 'bg-blue-50'
   if (mimeType === 'application/pdf') return 'bg-red-50'
   if (mimeType.startsWith('video/')) return 'bg-purple-50'

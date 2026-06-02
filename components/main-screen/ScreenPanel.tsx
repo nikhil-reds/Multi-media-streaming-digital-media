@@ -30,8 +30,31 @@ export default function ScreenPanel() {
     e.preventDefault()
     setDragOver(null)
     try {
-      const doc: Document = JSON.parse(e.dataTransfer.getData('application/json'))
-      setAssignments((prev) => ({ ...prev, [id]: doc }))
+      // Try to read playlist data first
+      const playlistStr = e.dataTransfer.getData('application/json-playlist')
+      if (playlistStr) {
+        const playlist = JSON.parse(playlistStr)
+        setAssignments((prev) => ({
+          ...prev,
+          [id]: {
+            id: playlist.id,
+            name: playlist.name,
+            mimeType: 'application/playlist',
+            isPlaylist: true,
+            size: 0,
+            s3Url: '',
+            status: 'UPLOADED',
+          } as any,
+        }))
+        return
+      }
+
+      // Fallback to standard document
+      const docStr = e.dataTransfer.getData('application/json')
+      if (docStr) {
+        const doc: Document = JSON.parse(docStr)
+        setAssignments((prev) => ({ ...prev, [id]: doc }))
+      }
     } catch {}
   }
 
@@ -80,9 +103,14 @@ export default function ScreenPanel() {
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${iconBg(assigned.mimeType)}`}>
                   <FileIcon mimeType={assigned.mimeType} />
                 </div>
-                <span className="text-xs text-gray-600 text-center leading-snug line-clamp-3 break-all w-full">
+                <span className="text-xs font-semibold text-gray-600 text-center leading-snug line-clamp-3 break-all w-full">
                   {assigned.name}
                 </span>
+                {(assigned as any).isPlaylist && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-bold uppercase tracking-wider">
+                    Playlist
+                  </span>
+                )}
               </div>
               {!compact && (
                 <button
@@ -110,7 +138,7 @@ export default function ScreenPanel() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
                       d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-xs text-gray-300">Drop doc here</span>
+                  <span className="text-xs text-gray-300">Drop doc/playlist</span>
                 </>
               )}
             </div>
@@ -126,7 +154,10 @@ export default function ScreenPanel() {
               onClick={() => {
                 const doc = assignments[id]
                 if (doc) {
-                  window.open(`/view/${doc.id}`, '_blank')
+                  const url = (doc as any).isPlaylist
+                    ? `/view/playlist/${doc.id}`
+                    : `/view/${doc.id}`
+                  window.open(url, '_blank')
                 } else {
                   setFocusedScreen(id)
                 }
