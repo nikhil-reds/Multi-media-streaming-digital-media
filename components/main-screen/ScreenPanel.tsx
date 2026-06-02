@@ -255,6 +255,7 @@ export default function ScreenPanel() {
     )
   }
 
+  const unassignedScreens = screens.filter((s) => s.playlistId === null)
   const focusedScreen = screens.find((s) => s.id === focusedScreenId)
 
   return (
@@ -291,11 +292,11 @@ export default function ScreenPanel() {
         <div className="flex-1 flex flex-wrap items-start gap-4 px-5 py-5 overflow-y-auto">
           {loading ? (
             <p className="text-sm text-gray-400">Loading screens…</p>
-          ) : screens.length === 0 && !isCreating ? (
-            <p className="text-sm text-gray-450">No screens registered. Click "Add Screen" to create one.</p>
+          ) : unassignedScreens.length === 0 && !isCreating ? (
+            <p className="text-sm text-gray-450">No unassigned screens found. Click "Add Screen" or manage assignments.</p>
           ) : (
             <>
-              {screens.map((screen, idx) => screenCard(screen, idx))}
+              {unassignedScreens.map((screen, idx) => screenCard(screen, idx))}
               {isCreating && (
                 <div className="shrink-0 flex flex-col gap-2 relative animate-pulse">
                   <div className="w-40 aspect-square rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/55 flex flex-col items-center justify-center gap-1.5">
@@ -373,7 +374,7 @@ export default function ScreenPanel() {
           >
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 className="text-sm font-semibold text-gray-700">
-                All Screens <span className="text-gray-400 font-normal ml-1">({screens.length})</span>
+                Unassigned Screens <span className="text-gray-400 font-normal ml-1">({unassignedScreens.length})</span>
               </h3>
               <button
                 onClick={() => setShowAll(false)}
@@ -385,7 +386,7 @@ export default function ScreenPanel() {
               </button>
             </div>
             <div className="flex flex-wrap gap-5 p-6 overflow-y-auto">
-              {screens.map((screen, idx) => screenCard(screen, idx, true))}
+              {unassignedScreens.map((screen, idx) => screenCard(screen, idx, true))}
             </div>
           </div>
         </div>
