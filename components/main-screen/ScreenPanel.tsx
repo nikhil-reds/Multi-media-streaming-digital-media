@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Document } from './shared'
 import { FileIcon, iconBg } from './shared'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type ScreenWithPlaylist = {
   id: string
@@ -291,7 +292,14 @@ export default function ScreenPanel() {
         {/* Screens grid */}
         <div className="flex-1 flex flex-wrap items-start gap-4 px-5 py-5 overflow-y-auto">
           {loading ? (
-            <p className="text-sm text-gray-400">Loading screens…</p>
+            <div className="flex flex-wrap gap-4 w-full">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div key={idx} className="shrink-0 flex flex-col gap-2 relative">
+                  <Skeleton className="w-40 aspect-square rounded-xl" />
+                  <Skeleton className="h-3 w-16 mx-auto rounded" />
+                </div>
+              ))}
+            </div>
           ) : unassignedScreens.length === 0 && !isCreating ? (
             <p className="text-sm text-gray-450">No unassigned screens found. Click "Add Screen" or manage assignments.</p>
           ) : (
