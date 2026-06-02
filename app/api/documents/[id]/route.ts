@@ -13,3 +13,19 @@ export async function GET(
   if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(doc)
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const deleted = await prisma.document.delete({
+      where: { id },
+    })
+    return NextResponse.json({ success: true, deleted })
+  } catch (error) {
+    console.error('[document DELETE]', error)
+    return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 })
+  }
+}

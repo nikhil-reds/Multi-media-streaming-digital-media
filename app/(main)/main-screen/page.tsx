@@ -11,7 +11,7 @@ export default function MainScreen() {
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [playlists, setPlaylists] = useState<any[]>([])
   const [loadingPlaylists, setLoadingPlaylists] = useState(true)
-  const [activeTab, setActiveTab] = useState<'sessions' | 'playlists'>('sessions')
+  const [activeTab, setActiveTab] = useState<'sessions' | 'playlists'>('playlists')
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<SessionDetail | null>(null)

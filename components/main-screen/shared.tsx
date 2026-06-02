@@ -78,6 +78,7 @@ export type SessionDetail = {
   status: string
   createdAt: string
   documents: Document[]
+  isPlaylist?: boolean
 }
 
 export const STATUS_COLORS: Record<string, string> = {

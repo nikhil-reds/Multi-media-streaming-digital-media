@@ -60,13 +60,15 @@ model Document {
 }
 
 model Playlist {
-  id        String         @id @default(cuid())
-  name      String
-  s3Bucket  String
-  s3Key     String
-  s3Url     String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id            String         @id @default(cuid())
+  name          String
+  loopCount     Int            @default(1)
+  loopUnlimited Boolean        @default(true)
+  s3Bucket      String
+  s3Key         String
+  s3Url         String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   items     PlaylistItem[]
 }

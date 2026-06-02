@@ -4,6 +4,25 @@ import { useState } from 'react'
 import type { Document } from './shared'
 import { FileIcon, iconBg } from './shared'
 
+const renderMediaPreview = (doc: any, sizeClass = "w-12 h-12", iconSizeClass = "w-7 h-7") => {
+  const isPlaylist = doc.mimeType === 'application/playlist';
+  const previewUrl = doc.s3Url;
+  const isImg = (!isPlaylist && doc.mimeType.startsWith('image/')) || (isPlaylist && doc.firstItemMimeType?.startsWith('image/'));
+  const isVid = (!isPlaylist && doc.mimeType.startsWith('video/')) || (isPlaylist && doc.firstItemMimeType?.startsWith('video/'));
+
+  return (
+    <div className={`${sizeClass} rounded-xl flex items-center justify-center ${iconBg(doc.mimeType)} overflow-hidden shrink-0 shadow-sm border border-gray-150`}>
+      {isImg ? (
+        <img src={previewUrl} alt={doc.name} className="w-full h-full object-cover" />
+      ) : isVid ? (
+        <video src={previewUrl} className="w-full h-full object-cover" preload="metadata" muted />
+      ) : (
+        <FileIcon mimeType={doc.mimeType} className={iconSizeClass} />
+      )}
+    </div>
+  )
+}
+
 export default function ScreenPanel() {
   const [screens, setScreens] = useState<number[]>([1, 2, 3, 4, 5])
   const [nextId, setNextId] = useState(6)
@@ -42,7 +61,8 @@ export default function ScreenPanel() {
             mimeType: 'application/playlist',
             isPlaylist: true,
             size: 0,
-            s3Url: '',
+            s3Url: playlist.firstItemThumbnail || '',
+            firstItemMimeType: playlist.firstItemMimeType || '',
             status: 'UPLOADED',
           } as any,
         }))
@@ -100,9 +120,7 @@ export default function ScreenPanel() {
           {assigned ? (
             <>
               <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${iconBg(assigned.mimeType)}`}>
-                  <FileIcon mimeType={assigned.mimeType} />
-                </div>
+                {renderMediaPreview(assigned)}
                 <span className="text-xs font-semibold text-gray-600 text-center leading-snug line-clamp-3 break-all w-full">
                   {assigned.name}
                 </span>
@@ -239,9 +257,7 @@ export default function ScreenPanel() {
             <div className="w-56 aspect-square rounded-xl border-2 border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-3 p-4">
               {assignments[focusedScreen] ? (
                 <>
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${iconBg(assignments[focusedScreen].mimeType)}`}>
-                    <FileIcon mimeType={assignments[focusedScreen].mimeType} />
-                  </div>
+                  {renderMediaPreview(assignments[focusedScreen], "w-20 h-20", "w-10 h-10")}
                   <span className="text-sm text-gray-700 text-center leading-snug break-all">
                     {assignments[focusedScreen].name}
                   </span>

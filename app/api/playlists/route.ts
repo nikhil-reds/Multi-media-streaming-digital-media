@@ -25,7 +25,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, documentIds } = body as { name: string; documentIds: string[] }
+    const { name, documentIds, loopCount, loopUnlimited } = body as {
+      name: string
+      documentIds: string[]
+      loopCount?: number
+      loopUnlimited?: boolean
+    }
 
     if (!name || !documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
       return NextResponse.json({ error: 'Name and a non-empty list of documentIds are required' }, { status: 400 })
@@ -49,9 +54,14 @@ export async function POST(request: NextRequest) {
     const bucketName = process.env.BUCKET_NAME!
     const key = `playlists/${playlistId}.json`
 
+    const resolvedLoopCount = typeof loopCount === 'number' ? loopCount : 1
+    const resolvedLoopUnlimited = typeof loopUnlimited === 'boolean' ? loopUnlimited : true
+
     const playlistJson = {
       id: playlistId,
       name,
+      loopCount: resolvedLoopCount,
+      loopUnlimited: resolvedLoopUnlimited,
       createdAt: new Date().toISOString(),
       items: orderedDocs.map((doc, idx) => ({
         id: doc.id,
@@ -65,10 +75,13 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(JSON.stringify(playlistJson, null, 2))
     const s3Url = await uploadBuffer(buffer, bucketName, key, 'application/json')
 
+    // Create the playlist in the database
     const playlist = await prisma.playlist.create({
       data: {
         id: playlistId,
         name,
+        loopCount: resolvedLoopCount,
+        loopUnlimited: resolvedLoopUnlimited,
         s3Bucket: bucketName,
         s3Key: key,
         s3Url,

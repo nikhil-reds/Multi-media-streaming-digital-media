@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileIcon, iconBg, formatBytes } from '@/components/main-screen/shared'
-import Toast, { type ToastData } from '@/components/Toast'
 import UniversalMediaViewer from '@/components/UniversalMediaViewer'
+import { toast } from 'sonner'
 
 type Document = {
   id: string
@@ -26,10 +26,13 @@ export default function PlaylistBuilder() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [playlistName, setPlaylistName] = useState('')
+  const [loopCount, setLoopCount] = useState<number>(1)
+  const [loopUnlimited, setLoopUnlimited] = useState<boolean>(true)
   const [playlistItems, setPlaylistItems] = useState<Document[]>([])
   const [dragOverBuilder, setDragOverBuilder] = useState(false)
-  const [toast, setToast] = useState<ToastData | null>(null)
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savingProgress, setSavingProgress] = useState(0)
 
   // Preview Player State
   const [previewIdx, setPreviewIdx] = useState<number | null>(null)
@@ -76,11 +79,7 @@ export default function PlaylistBuilder() {
     }
   }, [isPlaying, playlistItems.length, previewIdx, rotationInterval])
 
-  const showToast = (message: string, type: ToastData['type']) => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
-    setToast({ message, type })
-    toastTimerRef.current = setTimeout(() => setToast(null), 4000)
-  }
+
 
   // Handle Drag & Drop to Builder
   const handleDrop = (e: React.DragEvent) => {
@@ -91,7 +90,7 @@ export default function PlaylistBuilder() {
       if (!rawData) return
       const doc: Document = JSON.parse(rawData)
       if (playlistItems.some((item) => item.id === doc.id)) {
-        showToast('Document already in playlist', 'error')
+        toast.error('Document already in playlist')
         return
       }
       setPlaylistItems((prev) => [...prev, doc])
@@ -130,15 +129,24 @@ export default function PlaylistBuilder() {
   }
 
   // Save playlist API call
-  const handleSave = async () => {
+  const confirmSave = async () => {
     if (!playlistName.trim()) {
-      showToast('Please enter a playlist name', 'error')
+      toast.error('Please enter a playlist name')
       return
     }
-    if (playlistItems.length === 0) {
-      showToast('Please add at least one document to the playlist', 'error')
-      return
-    }
+    setIsSaving(true)
+    setSavingProgress(10)
+
+    // Smooth progress simulation
+    const interval = setInterval(() => {
+      setSavingProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(interval)
+          return 90
+        }
+        return prev + 10
+      })
+    }, 150)
 
     try {
       const res = await fetch('/api/playlists', {
@@ -147,18 +155,29 @@ export default function PlaylistBuilder() {
         body: JSON.stringify({
           name: playlistName,
           documentIds: playlistItems.map((item) => item.id),
+          loopCount: loopUnlimited ? 1 : loopCount,
+          loopUnlimited,
         }),
       })
 
+      clearInterval(interval)
+      setSavingProgress(100)
+
       if (res.ok) {
-        showToast('Playlist saved successfully!', 'success')
-        setTimeout(() => router.push('/main-screen'), 1200)
+        toast.success('Playlist saved successfully!')
+        setTimeout(() => {
+          setIsSaveModalOpen(false)
+          router.push('/main-screen')
+        }, 500)
       } else {
+        setIsSaving(false)
         const errorData = await res.json()
-        showToast(errorData.error || 'Failed to save playlist', 'error')
+        toast.error(errorData.error || 'Failed to save playlist')
       }
     } catch (error) {
-      showToast('An error occurred. Please try again.', 'error')
+      clearInterval(interval)
+      setIsSaving(false)
+      toast.error('An error occurred. Please try again.')
     }
   }
 
@@ -167,7 +186,7 @@ export default function PlaylistBuilder() {
       className="bg-gray-50 flex gap-6 px-6 py-6 overflow-hidden"
       style={{ height: 'calc(100vh - 113px)' }}
     >
-      <Toast toast={toast} />
+
 
       {/* Sidebar: Sessions & Documents */}
       <aside className="w-80 shrink-0 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col overflow-hidden">
@@ -355,15 +374,22 @@ export default function PlaylistBuilder() {
         <section className="h-64 shrink-0 bg-white border border-gray-200 shadow-sm rounded-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-4 shrink-0">
-            <input
-              type="text"
-              placeholder="Enter Playlist Name..."
-              value={playlistName}
-              onChange={(e) => setPlaylistName(e.target.value)}
-              className="w-72 text-xs font-semibold text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black transition-all"
-            />
+            <div className="flex items-center gap-3">
+              <h3 className="text-xs font-bold text-gray-800 uppercase tracking-widest">
+                Playlist Builder Workspace
+              </h3>
+              <span className="text-[10px] text-gray-400 font-medium bg-gray-100 px-2.5 py-1 rounded-full">
+                {playlistItems.length} {playlistItems.length === 1 ? 'file' : 'files'} selected
+              </span>
+            </div>
             <button
-              onClick={handleSave}
+              onClick={() => {
+                if (playlistItems.length === 0) {
+                  toast.error('Please add at least one document to the playlist')
+                  return
+                }
+                setIsSaveModalOpen(true)
+              }}
               className="bg-black hover:bg-gray-800 text-white text-[11px] font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors cursor-pointer"
             >
               Save Playlist
@@ -463,6 +489,144 @@ export default function PlaylistBuilder() {
           </div>
         </section>
       </div>
+
+      {isSaveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-gray-200 w-full max-w-lg overflow-hidden shadow-2xl p-6 relative flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Save Playlist</h3>
+                <p className="text-xs text-gray-500 mt-1">Configure your playlist and review details before saving.</p>
+              </div>
+              <button 
+                onClick={() => {
+                  if (!isSaving) setIsSaveModalOpen(false)
+                }} 
+                className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
+                disabled={isSaving}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Playlist Config Fields */}
+            <div className="space-y-4 py-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-700">Playlist Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Morning Commercials"
+                  value={playlistName}
+                  onChange={(e) => setPlaylistName(e.target.value)}
+                  disabled={isSaving}
+                  className="text-sm text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black transition-all"
+                />
+              </div>
+
+              {/* Loop controls */}
+              <div className="flex items-center gap-6 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-semibold text-gray-700">Loop Playback</span>
+                  <span className="text-[10px] text-gray-400">Define how many times this playlist repeats.</span>
+                </div>
+                <div className="flex items-center gap-3 ml-auto">
+                  <input
+                    type="number"
+                    min={1}
+                    disabled={loopUnlimited || isSaving}
+                    value={loopCount}
+                    onChange={(e) => setLoopCount(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-16 text-center text-xs font-semibold text-gray-800 bg-white border border-gray-200 rounded-lg py-1.5 px-2 focus:outline-none disabled:opacity-40"
+                  />
+                  <div className="flex items-center gap-1.5 select-none">
+                    <input
+                      type="checkbox"
+                      id="modalLoopUnlimited"
+                      checked={loopUnlimited}
+                      onChange={(e) => setLoopUnlimited(e.target.checked)}
+                      disabled={isSaving}
+                      className="w-4 h-4 accent-black rounded cursor-pointer"
+                    />
+                    <label
+                      htmlFor="modalLoopUnlimited"
+                      className="text-xs font-semibold text-gray-600 cursor-pointer uppercase tracking-wider"
+                    >
+                      Unlimited
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary Info */}
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3 text-xs text-blue-900 space-y-1">
+                <div className="font-semibold text-blue-950 flex justify-between">
+                  <span>Selected Files:</span>
+                  <span>{playlistItems.length} items</span>
+                </div>
+                <div className="flex justify-between text-blue-800 text-[11px]">
+                  <span>Total Size:</span>
+                  <span>{formatBytes(playlistItems.reduce((acc, item) => acc + item.size, 0))}</span>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <div className="border border-gray-200 rounded-xl p-3 bg-gray-50 text-[10px] text-gray-505 leading-relaxed">
+                <span className="font-bold text-gray-700 block mb-1">DISCLAIMER</span>
+                This playlist structure will be serialized into JSON, uploaded to AWS S3, and registered in our PostgreSQL database. Ensure all referenced media files are loaded, valid, and that you have necessary permissions to broadcast them.
+              </div>
+            </div>
+
+            {/* Progress / Loading Bar */}
+            {isSaving && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-semibold text-gray-700">
+                  <span>Uploading & saving playlist...</span>
+                  <span>{savingProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-black h-full transition-all duration-300 ease-out" 
+                    style={{ width: `${savingProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+              <button
+                onClick={() => setIsSaveModalOpen(false)}
+                disabled={isSaving}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-black hover:bg-gray-50 border border-gray-200 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={isSaving}
+                className="px-4 py-2 bg-black hover:bg-gray-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {isSaving ? (
+                  <>
+                    <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  'Confirm & Save'
+                )}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   )
 }

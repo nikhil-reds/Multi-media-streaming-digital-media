@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Session, StatusBadge, formatDate } from './shared'
+import { Session, StatusBadge, formatDate, FileIcon, iconBg } from './shared'
 
 type Props = {
   sessions: Session[]
@@ -27,28 +27,11 @@ export default function SessionSidebar({
 
   return (
     <aside className="w-72 shrink-0 rounded-2xl bg-white border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-      {/* Tab Header */}
-      <div className="flex border-b border-gray-150 shrink-0">
-        <button
-          onClick={() => onTabChange('sessions')}
-          className={`flex-1 text-center py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer border-b-2 transition-all ${
-            activeTab === 'sessions'
-              ? 'border-black text-black'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          Sessions
-        </button>
-        <button
-          onClick={() => onTabChange('playlists')}
-          className={`flex-1 text-center py-3 text-xs font-semibold uppercase tracking-wider cursor-pointer border-b-2 transition-all ${
-            activeTab === 'playlists'
-              ? 'border-black text-black'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
-          }`}
-        >
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-gray-100 shrink-0">
+        <h2 className="text-xs font-semibold text-gray-400 tracking-widest uppercase">
           Playlists
-        </button>
+        </h2>
       </div>
 
       {/* List */}
@@ -74,6 +57,8 @@ export default function SessionSidebar({
               ? s._count?.documents ?? 0
               : s.items?.length ?? 0
 
+            const firstDoc = activeTab === 'playlists' ? s.items?.[0]?.document : null
+
             return (
               <button
                 key={s.id}
@@ -86,28 +71,43 @@ export default function SessionSidebar({
                       id: s.id,
                       name: s.name,
                       itemsCount: fileCount,
+                      firstItemThumbnail: firstDoc?.s3Url || '',
+                      firstItemMimeType: firstDoc?.mimeType || '',
                     }))
                     e.dataTransfer.effectAllowed = 'copy'
                   }
                 }}
-                className={`w-full text-left mx-0 px-5 py-4 transition-all border-b border-gray-50 last:border-b-0 cursor-pointer ${
+                className={`w-full text-left mx-0 px-5 py-4 transition-all border-b border-gray-50 last:border-b-0 cursor-pointer flex gap-3.5 items-center ${
                   isActive
                     ? 'bg-black text-white'
-                    : 'hover:bg-gray-50 text-gray-900'
+                    : 'hover:bg-gray-50 text-gray-950'
                 } ${activeTab === 'playlists' ? 'cursor-grab active:cursor-grabbing' : ''}`}
               >
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className={`text-xs font-semibold truncate ${isActive ? 'text-white' : 'text-gray-800'}`}>
-                    {activeTab === 'sessions' ? `${s.id.slice(0, 18)}…` : s.name}
-                  </span>
-                  {activeTab === 'sessions' && !isActive && <StatusBadge status={s.status} />}
+                {activeTab === 'playlists' && (
+                  <div className={`w-10 h-10 rounded-lg shrink-0 flex items-center justify-center ${iconBg(firstDoc?.mimeType || 'application/playlist')} overflow-hidden border border-gray-150 shadow-sm`}>
+                    {firstDoc?.mimeType.startsWith('image/') ? (
+                      <img src={firstDoc.s3Url} alt={s.name} className="w-full h-full object-cover" />
+                    ) : firstDoc?.mimeType.startsWith('video/') ? (
+                      <video src={firstDoc.s3Url} className="w-full h-full object-cover" preload="metadata" muted />
+                    ) : (
+                      <FileIcon mimeType={firstDoc?.mimeType || 'application/playlist'} className="w-5 h-5" />
+                    )}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                    <span className={`text-xs font-semibold truncate ${isActive ? 'text-white' : 'text-gray-800'}`}>
+                      {activeTab === 'sessions' ? `${s.id.slice(0, 18)}…` : s.name}
+                    </span>
+                    {activeTab === 'sessions' && !isActive && <StatusBadge status={s.status} />}
+                  </div>
+                  <p className={`text-[10px] ${isActive ? 'text-gray-400' : 'text-gray-400'}`}>
+                    {formatDate(s.createdAt)}
+                  </p>
+                  <p className={`text-[10px] mt-0.5 font-medium ${isActive ? 'text-gray-300' : 'text-gray-500'}`}>
+                    {fileCount} file{fileCount !== 1 ? 's' : ''}
+                  </p>
                 </div>
-                <p className={`text-xs ${isActive ? 'text-gray-400' : 'text-gray-400'}`}>
-                  {formatDate(s.createdAt)}
-                </p>
-                <p className={`text-[11px] mt-1 font-medium ${isActive ? 'text-gray-300' : 'text-gray-500'}`}>
-                  {fileCount} file{fileCount !== 1 ? 's' : ''}
-                </p>
               </button>
             )
           })
