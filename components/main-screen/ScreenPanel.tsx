@@ -1,8 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Document } from './shared'
 import { FileIcon, iconBg } from './shared'
+
+type ScreenWithPlaylist = {
+  id: string
+  name: string
+  playlistId: string | null
+  playlist?: {
+    id: string
+    name: string
+    items: Array<{
+      id: string
+      order: number
+      document: {
+        id: string
+        name: string
+        mimeType: string
+        s3Url: string
+      }
+    }>
+  } | null
+}
 
 const renderMediaPreview = (doc: any, sizeClass = "w-12 h-12", iconSizeClass = "w-7 h-7") => {
   const isPlaylist = doc.mimeType === 'application/playlist';
@@ -24,79 +44,117 @@ const renderMediaPreview = (doc: any, sizeClass = "w-12 h-12", iconSizeClass = "
 }
 
 export default function ScreenPanel() {
-  const [screens, setScreens] = useState<number[]>([1, 2, 3, 4, 5])
-  const [nextId, setNextId] = useState(6)
-  const [assignments, setAssignments] = useState<Record<number, Document>>({})
-  const [dragOver, setDragOver] = useState<number | null>(null)
-  const [focusedScreen, setFocusedScreen] = useState<number | null>(null)
+  const [screens, setScreens] = useState<ScreenWithPlaylist[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dragOver, setDragOver] = useState<string | null>(null)
+  const [focusedScreenId, setFocusedScreenId] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
 
-  function addScreen() {
-    setScreens((prev) => [...prev, nextId])
-    setNextId((prev) => prev + 1)
+  // Fetch screens on mount
+  useEffect(() => {
+    fetch('/api/screens')
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setScreens(Array.isArray(data) ? data : []))
+      .catch((e) => console.error('Error fetching screens:', e))
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function addScreen() {
+    try {
+      const res = await fetch('/api/screens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (res.ok) {
+        const newScreen = await res.json()
+        setScreens((prev) => [...prev, newScreen])
+      }
+    } catch (e) {
+      console.error('Failed to add screen:', e)
+    }
   }
 
-  function removeScreen(id: number) {
-    setScreens((prev) => prev.filter((s) => s !== id))
-    setAssignments((prev) => {
-      const next = { ...prev }
-      delete next[id]
-      return next
-    })
+  async function removeScreen(id: string) {
+    try {
+      const res = await fetch(`/api/screens/${id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setScreens((prev) => prev.filter((s) => s.id !== id))
+        if (focusedScreenId === id) setFocusedScreenId(null)
+      }
+    } catch (e) {
+      console.error('Failed to remove screen:', e)
+    }
   }
 
-  function handleDrop(e: React.DragEvent, id: number) {
+  async function handleDrop(e: React.DragEvent, screenId: string) {
     e.preventDefault()
     setDragOver(null)
     try {
-      // Try to read playlist data first
       const playlistStr = e.dataTransfer.getData('application/json-playlist')
       if (playlistStr) {
-        const playlist = JSON.parse(playlistStr)
-        setAssignments((prev) => ({
-          ...prev,
-          [id]: {
-            id: playlist.id,
-            name: playlist.name,
-            mimeType: 'application/playlist',
-            isPlaylist: true,
-            size: 0,
-            s3Url: playlist.firstItemThumbnail || '',
-            firstItemMimeType: playlist.firstItemMimeType || '',
-            status: 'UPLOADED',
-          } as any,
-        }))
-        return
-      }
+        const playlistData = JSON.parse(playlistStr)
+        
+        // Save the screen in the schema
+        const res = await fetch(`/api/screens/${screenId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playlistId: playlistData.id }),
+        })
 
-      // Fallback to standard document
-      const docStr = e.dataTransfer.getData('application/json')
-      if (docStr) {
-        const doc: Document = JSON.parse(docStr)
-        setAssignments((prev) => ({ ...prev, [id]: doc }))
+        if (res.ok) {
+          const updatedScreen = await res.json()
+          setScreens((prev) => prev.map((s) => s.id === screenId ? updatedScreen : s))
+          
+          // Attach the playlist id in the URL
+          const newUrl = `${window.location.pathname}?playlistId=${playlistData.id}`
+          window.history.pushState(null, '', newUrl)
+        }
       }
-    } catch {}
+    } catch (err) {
+      console.error('Error dropping playlist:', err)
+    }
   }
 
-  function removeAssignment(id: number) {
-    setAssignments((prev) => {
-      const next = { ...prev }
-      delete next[id]
-      return next
-    })
+  async function removeAssignment(screenId: string) {
+    try {
+      const res = await fetch(`/api/screens/${screenId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playlistId: null }),
+      })
+
+      if (res.ok) {
+        const updatedScreen = await res.json()
+        setScreens((prev) => prev.map((s) => s.id === screenId ? updatedScreen : s))
+      }
+    } catch (err) {
+      console.error('Error removing assignment:', err)
+    }
   }
 
-  const screenCard = (id: number, idx: number, compact = false) => {
-    const assigned = assignments[id]
-    const isOver = dragOver === id
+  const screenCard = (screen: ScreenWithPlaylist, idx: number, compact = false) => {
+    const assignedPlaylist = screen.playlist
+    const isOver = dragOver === screen.id
+
+    // Map database playlist to the format expected by renderMediaPreview
+    const previewDoc = assignedPlaylist ? {
+      name: assignedPlaylist.name,
+      mimeType: 'application/playlist',
+      isPlaylist: true,
+      s3Url: (assignedPlaylist.items && assignedPlaylist.items[0]?.document?.s3Url) || '',
+      firstItemMimeType: (assignedPlaylist.items && assignedPlaylist.items[0]?.document?.mimeType) || '',
+    } : null
 
     return (
-      <div key={id} className="shrink-0 flex flex-col gap-2 relative group/screen">
+      <div key={screen.id} className="shrink-0 flex flex-col gap-2 relative group/screen">
         {/* Close button */}
         {!compact && (
           <button
-            onClick={() => removeScreen(id)}
-            className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-white border border-gray-200 shadow-sm text-gray-400 hover:bg-red-50 hover:border-red-300 hover:text-red-500 flex items-center justify-center transition-colors opacity-0 group-hover/screen:opacity-100"
+            onClick={() => removeScreen(screen.id)}
+            className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-white border border-gray-200 shadow-sm text-gray-400 hover:bg-red-50 hover:border-red-300 hover:text-red-500 flex items-center justify-center transition-colors opacity-0 group-hover/screen:opacity-100 cursor-pointer"
           >
             <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -109,31 +167,29 @@ export default function ScreenPanel() {
           className={`${compact ? 'w-36' : 'w-40'} aspect-square rounded-xl border-2 relative overflow-hidden transition-all duration-150
             ${isOver
               ? 'border-blue-400 bg-blue-50 shadow-lg scale-105'
-              : assigned
+              : assignedPlaylist
               ? 'border-gray-200 bg-white shadow-sm'
               : 'border-dashed border-gray-200 bg-white'
             }`}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(id) }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(screen.id) }}
           onDragLeave={() => setDragOver(null)}
-          onDrop={(e) => handleDrop(e, id)}
+          onDrop={(e) => handleDrop(e, screen.id)}
         >
-          {assigned ? (
+          {assignedPlaylist ? (
             <>
               <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-3">
-                {renderMediaPreview(assigned)}
+                {renderMediaPreview(previewDoc)}
                 <span className="text-xs font-semibold text-gray-600 text-center leading-snug line-clamp-3 break-all w-full">
-                  {assigned.name}
+                  {assignedPlaylist.name}
                 </span>
-                {(assigned as any).isPlaylist && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-bold uppercase tracking-wider">
-                    Playlist
-                  </span>
-                )}
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-bold uppercase tracking-wider">
+                  Playlist
+                </span>
               </div>
               {!compact && (
                 <button
-                  onClick={() => removeAssignment(id)}
-                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm"
+                  onClick={() => removeAssignment(screen.id)}
+                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-500 flex items-center justify-center transition-colors shadow-sm cursor-pointer"
                 >
                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -156,7 +212,7 @@ export default function ScreenPanel() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
                       d="M9 13h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span className="text-xs text-gray-300">Drop doc/playlist</span>
+                  <span className="text-xs text-gray-300">Drop playlist</span>
                 </>
               )}
             </div>
@@ -165,23 +221,20 @@ export default function ScreenPanel() {
 
         <div className="flex items-center justify-center gap-1">
           <p className="text-xs font-medium text-gray-500">
-            Screen {String(idx + 1).padStart(2, '0')}
+            {screen.name}
           </p>
           {!compact && (
             <button
               onClick={() => {
-                const doc = assignments[id]
-                if (doc) {
-                  const url = (doc as any).isPlaylist
-                    ? `/view/playlist/${doc.id}`
-                    : `/view/${doc.id}`
+                if (assignedPlaylist) {
+                  const url = `/view/screen/${screen.id}?playlistId=${assignedPlaylist.id}`
                   window.open(url, '_blank')
                 } else {
-                  setFocusedScreen(id)
+                  setFocusedScreenId(screen.id)
                 }
               }}
-              className={`transition-colors ${assignments[id] ? 'text-black hover:text-blue-500' : 'text-gray-300 hover:text-gray-500'}`}
-              title={assignments[id] ? `Open ${assignments[id].name}` : 'No document assigned'}
+              className={`transition-colors cursor-pointer ${assignedPlaylist ? 'text-black hover:text-blue-500' : 'text-gray-300 hover:text-gray-500'}`}
+              title={assignedPlaylist ? `Open ${assignedPlaylist.name} on screen` : 'No playlist assigned'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -193,7 +246,7 @@ export default function ScreenPanel() {
     )
   }
 
-  const focusedIdx = focusedScreen !== null ? screens.indexOf(focusedScreen) : -1
+  const focusedScreen = screens.find((s) => s.id === focusedScreenId)
 
   return (
     <>
@@ -201,7 +254,7 @@ export default function ScreenPanel() {
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 shrink-0 flex items-center justify-between">
           <h2 className="text-xs font-semibold text-gray-400 tracking-widest uppercase">
-            Screen
+            Screens
           </h2>
           <div className="flex items-center gap-2">
             <button
@@ -227,15 +280,21 @@ export default function ScreenPanel() {
 
         {/* Screens grid */}
         <div className="flex-1 flex flex-wrap items-start gap-4 px-5 py-5 overflow-y-auto">
-          {screens.map((id, idx) => screenCard(id, idx))}
+          {loading ? (
+            <p className="text-sm text-gray-400">Loading screens…</p>
+          ) : screens.length === 0 ? (
+            <p className="text-sm text-gray-450">No screens registered. Click "Add Screen" to create one.</p>
+          ) : (
+            screens.map((screen, idx) => screenCard(screen, idx))
+          )}
         </div>
       </div>
 
       {/* Focused screen overlay */}
-      {focusedScreen !== null && (
+      {focusedScreen && (
         <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center"
-          onClick={() => setFocusedScreen(null)}
+          onClick={() => setFocusedScreenId(null)}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-4 min-w-64"
@@ -243,11 +302,11 @@ export default function ScreenPanel() {
           >
             <div className="flex items-center justify-between w-full">
               <h3 className="text-sm font-semibold text-gray-700">
-                Screen {String(focusedIdx + 1).padStart(2, '0')}
+                {focusedScreen.name}
               </h3>
               <button
-                onClick={() => setFocusedScreen(null)}
-                className="w-7 h-7 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 flex items-center justify-center transition-colors"
+                onClick={() => setFocusedScreenId(null)}
+                className="w-7 h-7 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -255,15 +314,21 @@ export default function ScreenPanel() {
               </button>
             </div>
             <div className="w-56 aspect-square rounded-xl border-2 border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-3 p-4">
-              {assignments[focusedScreen] ? (
+              {focusedScreen.playlist ? (
                 <>
-                  {renderMediaPreview(assignments[focusedScreen], "w-20 h-20", "w-10 h-10")}
-                  <span className="text-sm text-gray-700 text-center leading-snug break-all">
-                    {assignments[focusedScreen].name}
+                  {renderMediaPreview({
+                    name: focusedScreen.playlist.name,
+                    mimeType: 'application/playlist',
+                    isPlaylist: true,
+                    s3Url: (focusedScreen.playlist.items && focusedScreen.playlist.items[0]?.document?.s3Url) || '',
+                    firstItemMimeType: (focusedScreen.playlist.items && focusedScreen.playlist.items[0]?.document?.mimeType) || '',
+                  }, "w-20 h-20", "w-10 h-10")}
+                  <span className="text-sm text-gray-700 text-center leading-snug break-all font-semibold">
+                    {focusedScreen.playlist.name}
                   </span>
                 </>
               ) : (
-                <span className="text-sm text-gray-400">No document assigned</span>
+                <span className="text-sm text-gray-400">No playlist assigned</span>
               )}
             </div>
           </div>
@@ -286,7 +351,7 @@ export default function ScreenPanel() {
               </h3>
               <button
                 onClick={() => setShowAll(false)}
-                className="w-7 h-7 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -294,7 +359,7 @@ export default function ScreenPanel() {
               </button>
             </div>
             <div className="flex flex-wrap gap-5 p-6 overflow-y-auto">
-              {screens.map((id, idx) => screenCard(id, idx, true))}
+              {screens.map((screen, idx) => screenCard(screen, idx, true))}
             </div>
           </div>
         </div>
