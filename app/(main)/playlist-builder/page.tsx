@@ -26,6 +26,8 @@ export default function PlaylistBuilder() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loadingSessions, setLoadingSessions] = useState(true)
   const [playlistName, setPlaylistName] = useState('')
+  const [loopCount, setLoopCount] = useState<number>(1)
+  const [loopUnlimited, setLoopUnlimited] = useState<boolean>(true)
   const [playlistItems, setPlaylistItems] = useState<Document[]>([])
   const [dragOverBuilder, setDragOverBuilder] = useState(false)
   const [toast, setToast] = useState<ToastData | null>(null)
@@ -147,6 +149,8 @@ export default function PlaylistBuilder() {
         body: JSON.stringify({
           name: playlistName,
           documentIds: playlistItems.map((item) => item.id),
+          loopCount: loopUnlimited ? 1 : loopCount,
+          loopUnlimited,
         }),
       })
 
@@ -355,13 +359,46 @@ export default function PlaylistBuilder() {
         <section className="h-64 shrink-0 bg-white border border-gray-200 shadow-sm rounded-2xl flex flex-col overflow-hidden">
           {/* Header */}
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-4 shrink-0">
-            <input
-              type="text"
-              placeholder="Enter Playlist Name..."
-              value={playlistName}
-              onChange={(e) => setPlaylistName(e.target.value)}
-              className="w-72 text-xs font-semibold text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black transition-all"
-            />
+            <div className="flex items-center gap-4">
+              <input
+                type="text"
+                placeholder="Enter Playlist Name..."
+                value={playlistName}
+                onChange={(e) => setPlaylistName(e.target.value)}
+                className="w-72 text-xs font-semibold text-gray-800 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:ring-2 focus:ring-black transition-all"
+              />
+
+              {/* Loop controls */}
+              <div className="flex items-center gap-2.5 border-l border-gray-150 pl-4">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Loop Count
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  disabled={loopUnlimited}
+                  value={loopCount}
+                  onChange={(e) => setLoopCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-14 text-center text-xs font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg py-1 px-1.5 focus:bg-white focus:outline-none disabled:opacity-40"
+                />
+
+                <div className="flex items-center gap-1.5 ml-1 select-none">
+                  <input
+                    type="checkbox"
+                    id="loopUnlimited"
+                    checked={loopUnlimited}
+                    onChange={(e) => setLoopUnlimited(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-black rounded cursor-pointer"
+                  />
+                  <label
+                    htmlFor="loopUnlimited"
+                    className="text-[10px] font-bold text-gray-500 cursor-pointer uppercase tracking-widest"
+                  >
+                    Unlimited
+                  </label>
+                </div>
+              </div>
+            </div>
             <button
               onClick={handleSave}
               className="bg-black hover:bg-gray-800 text-white text-[11px] font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors cursor-pointer"
