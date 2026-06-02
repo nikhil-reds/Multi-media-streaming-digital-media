@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Document } from './shared'
 import { FileIcon, iconBg } from './shared'
+import { toast } from 'sonner'
 
 type ScreenWithPlaylist = {
   id: string
@@ -46,6 +47,7 @@ const renderMediaPreview = (doc: any, sizeClass = "w-12 h-12", iconSizeClass = "
 export default function ScreenPanel() {
   const [screens, setScreens] = useState<ScreenWithPlaylist[]>([])
   const [loading, setLoading] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
   const [dragOver, setDragOver] = useState<string | null>(null)
   const [focusedScreenId, setFocusedScreenId] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -60,6 +62,7 @@ export default function ScreenPanel() {
   }, [])
 
   async function addScreen() {
+    setIsCreating(true)
     try {
       const res = await fetch('/api/screens', {
         method: 'POST',
@@ -69,9 +72,15 @@ export default function ScreenPanel() {
       if (res.ok) {
         const newScreen = await res.json()
         setScreens((prev) => [...prev, newScreen])
+        toast.success(`Screen "${newScreen.name}" created successfully`)
+      } else {
+        toast.error('Failed to create screen')
       }
     } catch (e) {
       console.error('Failed to add screen:', e)
+      toast.error('Failed to create screen')
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -282,10 +291,27 @@ export default function ScreenPanel() {
         <div className="flex-1 flex flex-wrap items-start gap-4 px-5 py-5 overflow-y-auto">
           {loading ? (
             <p className="text-sm text-gray-400">Loading screens…</p>
-          ) : screens.length === 0 ? (
+          ) : screens.length === 0 && !isCreating ? (
             <p className="text-sm text-gray-450">No screens registered. Click "Add Screen" to create one.</p>
           ) : (
-            screens.map((screen, idx) => screenCard(screen, idx))
+            <>
+              {screens.map((screen, idx) => screenCard(screen, idx))}
+              {isCreating && (
+                <div className="shrink-0 flex flex-col gap-2 relative animate-pulse">
+                  <div className="w-40 aspect-square rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/55 flex flex-col items-center justify-center gap-1.5">
+                    <svg className="w-7 h-7 text-gray-300 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5" />
+                    </svg>
+                    <span className="text-xs text-gray-450 font-medium">Creating...</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1">
+                    <p className="text-xs font-medium text-gray-400">
+                      Screen...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
