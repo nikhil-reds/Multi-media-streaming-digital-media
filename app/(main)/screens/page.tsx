@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Search,
@@ -11,7 +12,9 @@ import {
   Monitor,
   ExternalLink,
   PlusCircle,
-  PlaySquare
+  PlaySquare,
+  Play,
+  ArrowUpRight
 } from 'lucide-react'
 import { iconBg, formatDate } from '@/components/main-screen/shared'
 import { Button } from '@/components/ui/button'
@@ -70,6 +73,7 @@ type Screen = {
 }
 
 export default function ScreensDashboard() {
+  const router = useRouter()
   const [screens, setScreens] = useState<Screen[]>([])
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
@@ -470,37 +474,67 @@ export default function ScreensDashboard() {
                         </TableCell>
                         <TableCell className="p-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* Live Play Screen */}
-                            <button
-                              onClick={() => {
-                                const url = playlist 
-                                  ? `/view/screen/${screen.id}?playlistId=${playlist.id}`
-                                  : `/view/screen/${screen.id}`
-                                window.open(url, '_blank')
-                              }}
-                              className="p-2 text-zinc-500 hover:text-black hover:bg-zinc-100 rounded-lg transition-all cursor-pointer"
-                              title="Live view"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
+                            {/* Live View Redirect (Same Tab) */}
+                            <div className="relative group">
+                              <button
+                                onClick={() => {
+                                  const url = playlist 
+                                    ? `/view/screen/${screen.id}?playlistId=${playlist.id}`
+                                    : `/view/screen/${screen.id}`
+                                  router.push(url)
+                                }}
+                                className="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                              >
+                                <Play className="w-4 h-4 fill-current" />
+                              </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max scale-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md transition-all group-hover:scale-100 origin-bottom z-30">
+                                Redirect Live
+                              </span>
+                            </div>
+
+                            {/* Live Play Screen (New Tab) */}
+                            <div className="relative group">
+                              <button
+                                onClick={() => {
+                                  const url = playlist 
+                                    ? `/view/screen/${screen.id}?playlistId=${playlist.id}`
+                                    : `/view/screen/${screen.id}`
+                                  window.open(url, '_blank')
+                                }}
+                                className="p-2 text-zinc-500 hover:text-black hover:bg-zinc-100 rounded-lg transition-all cursor-pointer"
+                              >
+                                <ArrowUpRight className="w-4 h-4" />
+                              </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max scale-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md transition-all group-hover:scale-100 origin-bottom z-30">
+                                Open in New Tab
+                              </span>
+                            </div>
 
                             {/* Details sheet */}
-                            <button
-                              onClick={() => setSelectedDetailScreen(screen)}
-                              className="p-2 text-zinc-500 hover:text-black hover:bg-zinc-100 rounded-lg transition-all cursor-pointer"
-                              title="Screen Info"
-                            >
-                              <Info className="w-4 h-4" />
-                            </button>
+                            <div className="relative group">
+                              <button
+                                onClick={() => setSelectedDetailScreen(screen)}
+                                className="p-2 text-zinc-500 hover:text-black hover:bg-zinc-100 rounded-lg transition-all cursor-pointer"
+                              >
+                                <Info className="w-4 h-4" />
+                              </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max scale-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md transition-all group-hover:scale-100 origin-bottom z-30">
+                                Screen Info
+                              </span>
+                            </div>
 
                             {/* Delete dialog */}
-                            <button
-                              onClick={() => setDeleteConfirmId(screen.id)}
-                              className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                              title="Delete Screen"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="relative group">
+                              <button
+                                onClick={() => setDeleteConfirmId(screen.id)}
+                                className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max scale-0 rounded-lg bg-rose-600 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md transition-all group-hover:scale-100 origin-bottom z-30">
+                                Delete Screen
+                              </span>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -643,11 +677,23 @@ export default function ScreensDashboard() {
                     const url = selectedDetailScreen.playlistId 
                       ? `/view/screen/${selectedDetailScreen.id}?playlistId=${selectedDetailScreen.playlistId}`
                       : `/view/screen/${selectedDetailScreen.id}`
+                    router.push(url)
+                  }}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" /> Redirect Live
+                </Button>
+                <Button
+                  disabled={!selectedDetailScreen.playlistId}
+                  onClick={() => {
+                    const url = selectedDetailScreen.playlistId 
+                      ? `/view/screen/${selectedDetailScreen.id}?playlistId=${selectedDetailScreen.playlistId}`
+                      : `/view/screen/${selectedDetailScreen.id}`
                     window.open(url, '_blank')
                   }}
                   className="flex-1 bg-black hover:bg-zinc-900 text-white font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" /> Open Live
+                  <ArrowUpRight className="w-3.5 h-3.5" /> Open Tab
                 </Button>
               </div>
             </>
