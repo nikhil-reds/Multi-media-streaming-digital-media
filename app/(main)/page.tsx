@@ -374,7 +374,7 @@ export default function DocumentsDashboard() {
                 <Upload className="w-3.5 h-3.5" /> Upload Document
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl rounded-2xl bg-white p-0 overflow-hidden shadow-2xl">
+            <DialogContent className="max-w-4xl sm:max-w-4xl rounded-2xl bg-white p-0 overflow-hidden shadow-2xl">
               <div className="grid grid-cols-1 md:grid-cols-12">
                 {/* Left panel: Specifications and Instructions (Col Span 5) */}
                 <div className="md:col-span-5 bg-zinc-50 p-6 border-r border-zinc-100 flex flex-col justify-between">

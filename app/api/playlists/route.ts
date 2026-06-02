@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(JSON.stringify(playlistJson, null, 2))
     const s3Url = await uploadBuffer(buffer, bucketName, key, 'application/json')
 
+    // Create the playlist in the database
     const playlist = await prisma.playlist.create({
       data: {
         id: playlistId,
