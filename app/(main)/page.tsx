@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { FileIcon, iconBg, formatBytes, formatDate } from '@/components/main-screen/shared'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table,
   TableBody,
@@ -373,100 +374,181 @@ export default function DocumentsDashboard() {
                 <Upload className="w-3.5 h-3.5" /> Upload Document
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
-              <DialogHeader>
-                <DialogTitle>Upload New Documents</DialogTitle>
-                <DialogDescription>
-                  Drag and drop files here to upload to your secure storage. Supported formats include PDF, PNG, JPG, MP4, MP3, DOCX.
-                </DialogDescription>
-              </DialogHeader>
-
-              {/* Upload Drop Zone */}
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  setDragOver(true)
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  setDragOver(false)
-                  handleAddFiles(e.dataTransfer.files)
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl py-10 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
-                  dragOver ? 'border-black bg-zinc-50' : 'border-zinc-200 hover:border-zinc-400'
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleAddFiles(e.target.files)}
-                />
-                <Upload className="w-8 h-8 text-zinc-400" />
-                <p className="text-xs font-semibold text-zinc-700">Drag &amp; drop files or <span className="underline text-black">browse</span></p>
-                <p className="text-[10px] text-zinc-400">PDF, Images, Video, DOCX, Audio up to 100MB</p>
-              </div>
-
-              {/* File List */}
-              {uploadFiles.length > 0 && (
-                <div className="max-h-40 overflow-y-auto space-y-2 mt-4">
-                  {uploadFiles.map((fileObj) => (
-                    <div key={fileObj.id} className="flex items-center justify-between p-2 border border-zinc-100 rounded-lg bg-zinc-50/50">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <LucideFileIcon className="w-4 h-4 text-zinc-400 shrink-0" />
-                        <span className="text-xs font-medium text-zinc-700 truncate">{fileObj.file.name}</span>
-                        <span className="text-[10px] text-zinc-400 shrink-0">({formatBytes(fileObj.file.size)})</span>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setUploadFiles((prev) => prev.filter((f) => f.id !== fileObj.id))
-                        }}
-                        className="text-[10px] font-bold text-rose-500 hover:underline px-2"
-                      >
-                        Remove
-                      </button>
+            <DialogContent className="max-w-4xl rounded-2xl bg-white p-0 overflow-hidden shadow-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-12">
+                {/* Left panel: Specifications and Instructions (Col Span 5) */}
+                <div className="md:col-span-5 bg-zinc-50 p-6 border-r border-zinc-100 flex flex-col justify-between">
+                  <div className="space-y-5">
+                    <div>
+                      <DialogTitle className="text-lg font-bold text-zinc-900">Upload Documents</DialogTitle>
+                      <DialogDescription className="text-xs text-zinc-500 mt-1">
+                        Select multiple files to import into your workspace catalog.
+                      </DialogDescription>
                     </div>
-                  ))}
-                </div>
-              )}
 
-              {/* Progress Bar */}
-              {isUploading && (
-                <div className="mt-4 flex flex-col gap-1.5">
-                  <div className="flex justify-between text-[10px] text-zinc-500 font-semibold">
-                    <span>Uploading...</span>
-                    <span>{uploadProgress}%</span>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-white rounded-xl border border-zinc-150 shadow-sm space-y-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">
+                          Feature Highlight
+                        </span>
+                        <p className="text-[11px] font-medium text-zinc-700 leading-normal">
+                          ⚡ You can drag &amp; drop or select <strong className="text-black">multiple files</strong> at a time for concurrent uploading.
+                        </p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block">
+                          Supported Formats
+                        </span>
+
+                        <div className="space-y-2 text-[11px]">
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-500 font-bold shrink-0">•</span>
+                            <p className="text-zinc-650 leading-relaxed">
+                              <strong className="text-zinc-900">Images:</strong> PNG, JPG, JPEG, SVG, WebP, GIF, HEIC
+                            </p>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-purple-500 font-bold shrink-0">•</span>
+                            <p className="text-zinc-650 leading-relaxed">
+                              <strong className="text-zinc-900">Videos:</strong> MP4, MOV, AVI, MKV, WebM
+                            </p>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-red-500 font-bold shrink-0">•</span>
+                            <p className="text-zinc-650 leading-relaxed">
+                              <strong className="text-zinc-900">Documents:</strong> PDF, DOCX, PPTX, XLSX, TXT, CSV
+                            </p>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-emerald-500 font-bold shrink-0">•</span>
+                            <p className="text-zinc-650 leading-relaxed">
+                              <strong className="text-zinc-900">Audio:</strong> MP3, WAV, AAC, M4A, OGG
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full h-2 bg-zinc-150 rounded-full overflow-hidden">
-                    <div className="h-full bg-black transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+
+                  <div className="text-[10px] text-zinc-400 border-t border-zinc-200/60 pt-4 mt-6">
+                    Uploaded assets will be cataloged instantly.
                   </div>
                 </div>
-              )}
 
-              <DialogFooter className="mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsUploadOpen(false)
-                    setUploadFiles([])
-                  }}
-                  className="cursor-pointer text-xs"
-                  disabled={isUploading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleUploadSubmit}
-                  className="bg-black hover:bg-zinc-900 text-white font-semibold text-xs px-4 py-2 cursor-pointer disabled:opacity-40"
-                  disabled={uploadFiles.length === 0 || isUploading}
-                >
-                  {isUploading ? 'Uploading...' : 'Start Upload'}
-                </Button>
-              </DialogFooter>
+                {/* Right panel: Upload Dropzone & Items (Col Span 7) */}
+                <div className="md:col-span-7 p-6 flex flex-col justify-between min-h-[400px]">
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">
+                      Dropzone Workspace
+                    </span>
+
+                    {/* Upload Drop Zone */}
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDragOver(true)
+                      }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        setDragOver(false)
+                        handleAddFiles(e.dataTransfer.files)
+                      }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl py-12 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-200 ${
+                        dragOver
+                          ? 'border-black bg-zinc-50/50 scale-[0.99] shadow-inner'
+                          : 'border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50/20'
+                      }`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleAddFiles(e.target.files)}
+                      />
+                      <div className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center shadow-sm">
+                        <Upload className="w-5 h-5 text-zinc-500" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-semibold text-zinc-700">
+                          Drag &amp; drop files or <span className="underline text-black">browse</span>
+                        </p>
+                        <p className="text-[10px] text-zinc-400 mt-1">Multi-selection is fully active</p>
+                      </div>
+                    </div>
+
+                    {/* File List */}
+                    {uploadFiles.length > 0 && (
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">
+                          Queue ({uploadFiles.length})
+                        </span>
+                        {uploadFiles.map((fileObj) => (
+                          <div
+                            key={fileObj.id}
+                            className="flex items-center justify-between p-2.5 border border-zinc-150 rounded-xl bg-zinc-50/50 hover:bg-zinc-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <LucideFileIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                              <span className="text-xs font-semibold text-zinc-700 truncate">{fileObj.file.name}</span>
+                              <span className="text-[9px] text-zinc-400 shrink-0 font-mono">({formatBytes(fileObj.file.size)})</span>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setUploadFiles((prev) => prev.filter((f) => f.id !== fileObj.id))
+                              }}
+                              className="text-[10px] font-bold text-rose-600 hover:text-rose-700 hover:underline px-2 cursor-pointer"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Progress Bar */}
+                    {isUploading && (
+                      <div className="flex flex-col gap-1.5 p-3 bg-zinc-50 rounded-xl border border-zinc-150">
+                        <div className="flex justify-between text-[10px] text-zinc-500 font-semibold leading-none">
+                          <span>Uploading files to storage...</span>
+                          <span className="font-mono">{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-black transition-all duration-200 rounded-full"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <DialogFooter className="mt-6 border-t border-zinc-100 pt-4 flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsUploadOpen(false)
+                        setUploadFiles([])
+                      }}
+                      className="cursor-pointer text-xs"
+                      disabled={isUploading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleUploadSubmit}
+                      className="bg-black hover:bg-zinc-900 text-white font-semibold text-xs px-5 py-2 rounded-xl cursor-pointer disabled:opacity-40"
+                      disabled={uploadFiles.length === 0 || isUploading}
+                    >
+                      {isUploading ? 'Processing...' : `Upload ${uploadFiles.length > 0 ? `(${uploadFiles.length})` : ''}`}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
@@ -580,9 +662,33 @@ export default function DocumentsDashboard() {
       {/* 4. Table / Main List Workspace */}
       <section className="flex-1 bg-white border border-zinc-150 rounded-2xl shadow-sm overflow-hidden flex flex-col">
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-8 h-8 text-zinc-400 animate-spin" />
-            <p className="text-xs text-zinc-400 font-semibold">Loading documents list…</p>
+          <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-12 rounded-lg" />
+                <Skeleton className="h-6 flex-1 rounded-lg" />
+                <Skeleton className="h-6 w-24 rounded-lg" />
+                <Skeleton className="h-6 w-24 rounded-lg" />
+              </div>
+              <div className="border-t border-zinc-100 pt-4 space-y-4">
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center gap-4 py-2 border-b border-zinc-50 last:border-0">
+                    <Skeleton className="h-4 w-4 rounded" />
+                    <Skeleton className="h-10 w-10 rounded-lg animate-pulse" />
+                    <Skeleton className="h-4 w-40 rounded" />
+                    <Skeleton className="h-4 w-20 rounded" />
+                    <Skeleton className="h-4 w-16 rounded" />
+                    <Skeleton className="h-6 w-24 rounded-md" />
+                    <Skeleton className="h-4 w-28 rounded" />
+                    <div className="flex-1 flex justify-end gap-1.5">
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ) : filteredDocs.length === 0 ? (
           /* Empty State */
